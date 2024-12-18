@@ -1,0 +1,14 @@
+celery
+channels-redis
+daphne
+django
+djangorestframework
+django-celery-results
+drf-spectacular
+drf-spectacular[sidecar]
+numpy
+python-dotenv
+psycopg2-binary
+redis
+requests
+web3

@@ -1,0 +1,94 @@
+services:
+  authdb:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES1_USER}
+      POSTGRES_PASSWORD: ${POSTGRES1_PASS}
+      POSTGRES_DB: authdb
+    ports:
+      - '5432:5432'
+    volumes:
+      - authdb_data:/var/lib/postgresql/data
+  backenddb:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES2_USER}
+      POSTGRES_PASSWORD: ${POSTGRES2_PASS}
+      POSTGRES_DB: backenddb
+    ports:
+      - '5434:5432'
+    volumes:
+      - backenddb_data:/var/lib/postgresql/data
+
+  celery:
+    build:
+      context: ${DJANGO_DIR}
+      dockerfile: Dockerfile.Celery
+    volumes:
+      - ${DJANGO_DIR}:/app
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+
+  redis:
+    image: redis:latest
+
+  backend:
+    build:
+      context: ${DJANGO_DIR}
+    command: >
+      sh -c "python manage.py makemigrations --no-input &&
+         python manage.py migrate --no-input &&
+         python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ${DJANGO_DIR}:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backendapi.settings
+    depends_on:
+      - celery
+      - backenddb
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+
+  eth_block_microservice:
+    build:
+      context: microservices/eth_block
+    depends_on:
+      - backend
+
+  eth_price_microservice:
+    build:
+      context: microservices/eth_price
+    depends_on:
+      - backend
+
+
+  frontend:
+    build:
+      context: ${FRONTEND_DIR}
+    depends_on:
+      - authdb
+    environment:
+      - AUTH_DRIZZLE_URL=postgres://${POSTGRES1_USER}:${POSTGRES1_PASS}@authdb:5432/authdb
+    ports:
+      - '3000:3000'
+    develop:
+      watch:
+        - action: sync
+          path: ${FRONTEND_DIR}
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+
+volumes:
+  authdb_data:
+  backenddb_data:
