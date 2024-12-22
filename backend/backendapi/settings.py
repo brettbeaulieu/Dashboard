@@ -17,9 +17,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-POSTGRES_USER = os.getenv('POSTGRES_USER')
-POSTGRES_PASS = os.getenv('POSTGRES_PASS')
-FRONTEND_HOST = os.getenv('FRONTEND_HOST')
+POSTGRES_USER = os.getenv('POSTGRES2_USER')
+POSTGRES_PASS = os.getenv('POSTGRES2_PASS')
+FRONTEND_HOST = os.getenv('HOST_DOMAIN')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

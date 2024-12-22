@@ -9,6 +9,7 @@ services:
       - '5432:5432'
     volumes:
       - authdb_data:/var/lib/postgresql/data
+
   backenddb:
     image: postgres:latest
     environment:
@@ -22,10 +23,10 @@ services:
 
   celery:
     build:
-      context: ${DJANGO_DIR}
+      context: ./backend
       dockerfile: Dockerfile.Celery
     volumes:
-      - ${DJANGO_DIR}:/app
+      - ./backend:/app
     depends_on:
       - redis
     deploy:
@@ -38,17 +39,21 @@ services:
 
   backend:
     build:
-      context: ${DJANGO_DIR}
+      context: ./backend
     command: >
       sh -c "python manage.py makemigrations --no-input &&
          python manage.py migrate --no-input &&
          python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ${DJANGO_DIR}:/app
+      - ./backend:/app
     ports:
       - "8000:8000"
     environment:
+      - HOST_DOMAIN=${HOST_DOMAIN}
       - DJANGO_SETTINGS_MODULE=backendapi.settings
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - POSTGRES2_USER=${POSTGRES2_USER}
+      - POSTGRES2_PASS=${POSTGRES2_PASS}
     depends_on:
       - celery
       - backenddb
@@ -60,29 +65,37 @@ services:
   eth_block_microservice:
     build:
       context: microservices/eth_block
+    environment:
+      - INFURA_PROJECT_ID=${INFURA_PROJECT_ID}
     depends_on:
       - backend
 
   eth_price_microservice:
     build:
       context: microservices/eth_price
+    environment:
+      - COINBASE_KEY_NAME=${COINBASE_KEY_NAME}
+      - COINBASE_PRIVATE_KEY=${COINBASE_PRIVATE_KEY}
     depends_on:
       - backend
 
-
   frontend:
     build:
-      context: ${FRONTEND_DIR}
+      context: ./frontend
     depends_on:
       - authdb
     environment:
       - AUTH_DRIZZLE_URL=postgres://${POSTGRES1_USER}:${POSTGRES1_PASS}@authdb:5432/authdb
+      - AUTH_SECRET=${AUTH_SECRET}
+      - NEXT_PUBLIC_HOST_DOMAIN=${HOST_DOMAIN}
+      - NEXT_PUBLIC_HOST_URL=http://${HOST_DOMAIN}
+      - NEXTAUTH_URL=http://${HOST_DOMAIN}:3000
     ports:
       - '3000:3000'
     develop:
       watch:
         - action: sync
-          path: ${FRONTEND_DIR}
+          path: ./frontend
           target: /app
           ignore:
             - node_modules/

@@ -1,34 +1,29 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import type { EthereumBlock, PaginationResult } from '@/lib/types';
+import type { EthereumBlock } from '@/lib/types';
 
-import { CoinbasePrice } from './CoinbaseTicker';
 import { EthereumBlockChart } from './EthereumBlockChart';
+import { EthereumBlockTable } from './EthereumBlockTable';
 
 // get host url from .env
-const host = process.env.NEXT_PUBLIC_HOST_URL ?? 'XXXXXXXXXXXXXXXXXXXXX';
-
+const host = process.env.NEXT_PUBLIC_HOST_DOMAIN ?? 'XXXXXXXXXXXXXXXXXXXXX';
 const CustomCard = ({ children }: { children: ReactNode }) => {
     return (
-        <div className="flex flex-col w-full sm:w-1/2 h-fit rounded-xl items-start justify-center p-4 sm:p-6 gap-6 border shadow">
+        <div className="w-full h-full rounded-xl items-start justify-center p-4 sm:p-6 gap-6 border shadow">
             {children}
         </div>
     )
 }
 
-const setBlockHelper = (prev: EthereumBlock[], newBlock: EthereumBlock) => {
-    // Avoid adding the same block twice, but update tx_count when necessary.
-    if (prev.length === 0 || prev[prev.length - 1].block_number !== newBlock.block_number) {
-        console.log('adding new block', newBlock.block_number);
-        return [...prev.slice(1), newBlock];
-    } else if (prev[prev.length - 1].block_number === newBlock.block_number) {
-        console.log('updating block', newBlock.block_number, 'from', prev[prev.length - 1].transaction_count, 'to', newBlock.transaction_count);
-        prev[prev.length - 1] = newBlock;
-    } else {
-        // Block data already exists, feel free to do nothing.
+const setBlockHelper = (blockData: EthereumBlock[], newBlock: EthereumBlock) => {
+    // Avoid adding the same block twice
+    if (blockData[blockData.length - 1].block_number !== newBlock.block_number) {
+        // Pop the first value and append newBlock
+        return [...(blockData.slice(1)), newBlock];
     }
-    return prev;
+
+    return blockData;
 }
 
 export function formatLargeNumber(num: number | undefined, rounding: number) {
@@ -47,9 +42,9 @@ export function formatLargeNumber(num: number | undefined, rounding: number) {
     return `${num.toFixed(rounding)}${units[unitIndex]}`;
 }
 
-export function ChartGrid(props: Readonly<{ blockData: PaginationResult<EthereumBlock> }>) {
+export function BlockGrid(props: Readonly<{ blockData: EthereumBlock[] }>) {
     const [ws, setWs] = useState<WebSocket | null>(null);
-    const [blockData, setBlockData] = useState<EthereumBlock[]>(props.blockData.results);
+    const [blockData, setBlockData] = useState<EthereumBlock[]>(props.blockData);
 
     // WebSocket connection and data update logic
     useEffect(() => {
@@ -83,7 +78,7 @@ export function ChartGrid(props: Readonly<{ blockData: PaginationResult<Ethereum
 
             websocket.onmessage = event => {
                 const newBlock = JSON.parse(event.data);
-                setBlockData(setBlockHelper(blockData, newBlock));
+                setBlockData(prevBlockData => setBlockHelper(prevBlockData, newBlock));
             };
         };
 
@@ -103,31 +98,27 @@ export function ChartGrid(props: Readonly<{ blockData: PaginationResult<Ethereum
 
 
     return (
-        <div className="flex flex-row w-full h-full justify-center items-center p-6 gap-6">
-            <div className="flex flex-col w-full h-full gap-2">
-                <div className="flex flex-row w-full gap-2">
-                    <CoinbasePrice />
-                </div>
-                <div className="flex flex-col sm:flex-row w-full gap-2">
-                    <CustomCard>
-                        <EthereumBlockChart
-                            data={blockData}
-                            dataKey="transaction_count"
-                            label="Transaction Count"
-                            color="#60a5fa"
-                            tickFormatter={value => formatLargeNumber(value, 0)}
-                        />
-                    </CustomCard>
-                    <CustomCard>
-                        <EthereumBlockChart
-                            data={blockData}
-                            dataKey="gas_used"
-                            label="Gas Used"
-                            color="#60a5fa"
-                            tickFormatter={value => formatLargeNumber(value, 2)}
-                        />
-                    </CustomCard>
-                </div>
+        <div className="flex flex-col-reverse w-full h-full items-start gap-4">
+            <EthereumBlockTable data={blockData} />
+            <div className="flex flex-col xl:flex-row w-full h-full gap-4">
+                <CustomCard>
+                    <EthereumBlockChart
+                        data={blockData}
+                        dataKey="transaction_count"
+                        label="Transaction Count"
+                        color="#60a5fa"
+                        tickFormatter={value => formatLargeNumber(value, 0)}
+                    />
+                </CustomCard>
+                <CustomCard>
+                    <EthereumBlockChart
+                        data={blockData}
+                        dataKey="gas_used"
+                        label="Gas Used"
+                        color="#20F5fa"
+                        tickFormatter={value => formatLargeNumber(value, 2)}
+                    />
+                </CustomCard>
             </div>
         </div>
     )

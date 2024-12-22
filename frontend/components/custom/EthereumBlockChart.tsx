@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { EthereumBlock } from '@/lib/types';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 
@@ -45,27 +45,22 @@ export function EthereumBlockChart({
   };
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[250px] w-full h-full">
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
       <BarChart accessibilityLayer data={data}>
-        <CartesianGrid />
         <XAxis
           dataKey="block_number"
-          tickLine={true}
-          tickMargin={10}
+          tickLine={false}
           axisLine={false}
         />
         <YAxis
           dataKey={dataKey}
           tickLine={false}
-          tickCount={5}
-          tickMargin={10}
           tickFormatter={tickFormatter || ((value: number) => formatLargeNumber(value, rounding))}
-          domain={[0, (dataMax: number) => dataMax + 1]}
           axisLine={false}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey={dataKey} radius={4} isAnimationActive={false} />
+        <Bar dataKey={dataKey} radius={2} fill={`var(--color-${dataKey}`} isAnimationActive={false} />
       </BarChart>
     </ChartContainer>
   );

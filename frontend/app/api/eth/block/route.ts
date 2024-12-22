@@ -7,15 +7,15 @@ export const GET = auth(async function GET(req) {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // get page if specified
+    // get offset, limit if specified
     const { searchParams } = new URL(req.url);
 
-    // get page parameter
-    const page = searchParams.get('page') ?? '1';
+    const offset = searchParams.get('offset') ?? '0';
+    const limit = searchParams.get('limit') ?? '50';
 
     try {
         // Call the Django API to grab tasks
-        const response = await fetch(`http://backend:8000/api/eth/block/?page=${page}`);
+        const response = await fetch(`http://backend:8000/api/eth/block/?offset=${offset}&limit=${limit}`);
 
         // Handle non-2xx responses
         if (!response.ok) {

@@ -10,7 +10,7 @@ export default function BuildNumericTooltip({title, children} : Readonly<{title:
     return (
         <TooltipProvider>
             <Tooltip>
-                <TooltipTrigger>{title}</TooltipTrigger>
+                <TooltipTrigger className='w-full h-full'>{title}</TooltipTrigger>
                 <TooltipContent>
                     {children}
                 </TooltipContent>

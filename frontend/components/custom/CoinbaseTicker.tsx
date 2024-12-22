@@ -32,7 +32,7 @@ type ProductTicker = {
     best_ask_quantity: number;
 };
 
-const host = process.env.NEXT_PUBLIC_HOST_URL ?? '';
+const host = process.env.NEXT_PUBLIC_HOST_DOMAIN ?? '';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -69,17 +69,17 @@ const BidAsk = ({ bid, ask }: { bid: number, ask: number }) => {
 
     const bidDisplay =  <p className="font-bold text-red-500 text-xs sm:text-sm tabular-nums">{currencyFormatter.format(ask)} </p>
     const askDisplay = <p className="font-bold text-green-500 text-xs sm:text-sm tabular-nums">{currencyFormatter.format(bid)}</p>
-    
-    return (
-    
 
+    return (
     <div>
         {/* Best ask and best bid sidebyside, in respective colorations */}
         <div className="flex flex-row w-fit gap-2">
-            <BuildNumericTooltip title={askDisplay}>
+            <BuildNumericTooltip title={bidDisplay}>
                 <p className="font-bold text-red-500 text-xs sm:text-sm tabular-nums">{currencyFormatter.format(ask)} </p>
             </BuildNumericTooltip>
-            <p className="font-bold text-green-500 text-xs sm:text-sm tabular-nums">{currencyFormatter.format(bid)}</p>
+            <BuildNumericTooltip title={askDisplay}>
+                <p className="font-bold text-green-500 text-xs sm:text-sm tabular-nums">{currencyFormatter.format(bid)}</p>
+            </BuildNumericTooltip>
         </div>
     </div>
     )
@@ -120,6 +120,8 @@ export function CoinbasePrice() {
     useEffect(() => {
         const connectWebSocket = () => {
             // Create WebSocket connection only once
+            console.log('Connecting to WebSocket...');
+            console.log(`Host: ${host}`)
             const websocket = new WebSocket(`ws://${host}:8000/ws/ticker/ETH-USD/`);
 
             // Assign the websocket object to the state to manage it
@@ -147,8 +149,8 @@ export function CoinbasePrice() {
             };
 
             websocket.onmessage = event => {
+                console.log(`newProduct: ${event.data}`)
                 const newProduct = JSON.parse(event.data);
-
                 // convert strings to nums
                 newProduct.price = parseFloat(newProduct.price);
                 newProduct.volume_24_h = parseFloat(newProduct.volume_24_h);
@@ -179,9 +181,9 @@ export function CoinbasePrice() {
     }, []);
 
     return (
-        <div className="flex flex-col sm:flex-row w-full h-full rounded-lg border shadow p-4 sm:p-4 gap-2 items-start">
+        <div className="flex flex-col sm:flex-row w-full h-fit rounded-lg border shadow p-4 sm:p-4 gap-2 items-start">
             <div className="flex flex-col">
-                <h1 className="tracking-tighter font-bold text-3xl text-nowrap">{productData?.product_id}</h1>
+                <h1 className="tracking-tighter font-bold text-3xl text-nowrap">{productData?.product_id ?? 'NONE'}</h1>
                 <div className="flex flex-col sm:flex-col w-full h-full gap-1">
                     <div className="flex flex-row w-full items-center gap-2">
                         <h1 className="tracking-tighter font-bold text-2xl sm:text-4xl tabular-nums">{currencyFormatter.format(productData?.price ?? 0)}</h1>

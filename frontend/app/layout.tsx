@@ -23,7 +23,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.className} ${inter.className} antialiased flex flex-row w-full h-full min-h-screen`}
+        className={`${inter.className} ${inter.className} antialiased flex flex-row w-full h-full min-h-screen max-w-[100vw]`}
       >
         <Providers session={session}>
           {children}
