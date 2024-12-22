@@ -56,14 +56,12 @@ export function BlockGrid(props: Readonly<{ blockData: EthereumBlock[] }>) {
             setWs(websocket);
 
             websocket.onopen = () => {
-                console.log('connected to websocket');
             };
 
             websocket.onclose = event => {
                 console.log('WebSocket closed with code', event.code);
                 // 1000 means normal closure
                 if (event.code !== 1000) {
-                    console.log('Reconnecting to WebSocket...');
                     // Try reconnecting after 3 seconds
                     const threeSecondsMS = 3000
                     setTimeout(connectWebSocket, threeSecondsMS);

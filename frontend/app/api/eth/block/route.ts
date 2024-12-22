@@ -25,7 +25,6 @@ export const GET = auth(async function GET(req) {
         }
 
         const data = await response.json();
-        console.log(data)
         // Return the response from the Django API to the client
         return NextResponse.json(data, { status: response.status });
     } catch (error) {

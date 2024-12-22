@@ -45,9 +45,6 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
 });
 
 function formatLargeNumber(num: number | undefined) {
-
-    console.log(typeof num)
-
     if (num === undefined) {
         return 'N/A';
     }
@@ -120,22 +117,18 @@ export function CoinbasePrice() {
     useEffect(() => {
         const connectWebSocket = () => {
             // Create WebSocket connection only once
-            console.log('Connecting to WebSocket...');
-            console.log(`Host: ${host}`)
             const websocket = new WebSocket(`ws://${host}:8000/ws/ticker/ETH-USD/`);
 
             // Assign the websocket object to the state to manage it
             setWs(websocket);
 
             websocket.onopen = () => {
-                console.log('connected to websocket');
             };
 
             websocket.onclose = event => {
                 console.log('WebSocket closed with code', event.code);
                 // 1000 means normal closure
                 if (event.code !== 1000) {
-                    console.log('Reconnecting to WebSocket...');
                     // Try reconnecting after 3 seconds
                     const threeSecondsMs = 3000
                     setTimeout(connectWebSocket, threeSecondsMs);
@@ -149,7 +142,6 @@ export function CoinbasePrice() {
             };
 
             websocket.onmessage = event => {
-                console.log(`newProduct: ${event.data}`)
                 const newProduct = JSON.parse(event.data);
                 // convert strings to nums
                 newProduct.price = parseFloat(newProduct.price);
