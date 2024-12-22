@@ -3,6 +3,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import ProductTicker
 from channels.db import database_sync_to_async
+from .serializers import ProductTickerSerializer
 
 class TickerConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -20,6 +21,9 @@ class TickerConsumer(AsyncWebsocketConsumer):
 
         # Accept the WebSocket connection
         await self.accept()
+
+        # Store the last sent ticker's timestamp (or any unique field)
+        self.last_sent_timestamp = None
 
         # Start the periodic message sending task
         self.send_task = asyncio.create_task(self.send_periodic_updates())
@@ -44,12 +48,20 @@ class TickerConsumer(AsyncWebsocketConsumer):
             # Get the latest ticker data
             ticker_data = await self.get_ticker_data()
 
-            if ticker_data:
-                # Send ticker data to the WebSocket
-                await self.send(text_data=json.dumps(ticker_data))
+            # Only send new data if it's different from the last sent data
+            if ticker_data and (self.last_sent_timestamp != ticker_data.timestamp):
+                # Serialize the data and send it to the WebSocket
+                serializer = ProductTickerSerializer(ticker_data)
+                serialized = json.dumps(serializer.data)
 
-            # Wait for the next update (e.g., send an update every 5 seconds)
-            await asyncio.sleep(5)  # Adjust the sleep time as needed
+                # Send ticker data to the WebSocket
+                await self.send(text_data=serialized)
+
+                # Update the last sent timestamp
+                self.last_sent_timestamp = ticker_data.timestamp
+
+            # Wait for the next update (e.g., send an update every 2 seconds)
+            await asyncio.sleep(2)  # Adjust the sleep time as needed
 
     @database_sync_to_async
     def get_ticker_data(self):
@@ -57,21 +69,6 @@ class TickerConsumer(AsyncWebsocketConsumer):
         Query the latest ticker data for the product_id
         """
         try:
-            ticker = ProductTicker.objects.filter(product_id=self.product_id).latest('timestamp')
-            return {
-                'timestamp': ticker.timestamp.isoformat(),
-                'product_id': ticker.product_id,
-                'price': str(ticker.price),
-                'volume_24_h': str(ticker.volume_24_h),
-                'low_24_h': str(ticker.low_24_h),
-                'high_24_h': str(ticker.high_24_h),
-                'low_52_w': str(ticker.low_52_w),
-                'high_52_w': str(ticker.high_52_w),
-                'price_percent_chg_24_h': str(ticker.price_percent_chg_24_h),
-                'best_bid': str(ticker.best_bid),
-                'best_ask': str(ticker.best_ask),
-                'best_bid_quantity': str(ticker.best_bid_quantity),
-                'best_ask_quantity': str(ticker.best_ask_quantity),
-            }
+            return ProductTicker.objects.filter(product_id=self.product_id).latest('timestamp')
         except ProductTicker.DoesNotExist:
             return None
